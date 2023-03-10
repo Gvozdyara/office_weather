@@ -1,0 +1,60 @@
+#: import MainLayout widgets.MainLayout
+#: import ParamSelector widgets.ParamSelector
+
+
+<ParamSelector>:
+    active_: active_
+    value_: value_
+    CheckBox:
+        id: active_
+        group: "main"
+    Label:
+        text: root.name
+        size_hint: None, None
+        size: self.texture_size
+        text_size: self.size
+    Label:
+        id: value_
+        size_hint: None, None
+        size: self.texture_size
+        text_size: self.size
+
+
+
+<MainLayout>:
+    interactive_lay: interactive_lay
+    selector_lay: selector_lay
+    orientation: "vertical"
+    BoxLayout:
+        Label:
+            size_hint_x: None
+            width: dp(150)
+            text: "COM 777"
+            font_size: dp(50)
+        BoxLayout:
+    BoxLayout:
+        BoxLayout:
+            id: interactive_lay
+            orientation: "vertical"
+            BoxLayout:
+                id: selector_lay
+            BoxLayout:
+
+
+        BoxLayout:
+            orientation: "vertical"
+            size_hint_x: None
+            width: dp(50)
+            Button:
+                text: "Sokol M"
+                size_hint: None, None
+                size: dp(50), dp(50)
+            Button:
+                text: "Sokol UZ"
+                size_hint: None, None
+                size: dp(50), dp(50)
+            BoxLayout:
+
+
+
+
