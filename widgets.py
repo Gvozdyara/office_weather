@@ -1,4 +1,7 @@
+import logging
+
 from kivy.uix.boxlayout import BoxLayout
+from kivy.clock import Clock
 from kivy.properties import ObjectProperty, DictProperty
 from kivy.uix.widget import Widget
 from kivy.app import App
@@ -9,6 +12,10 @@ class MainLayout(BoxLayout):
 
     def __init__(self):
         super(MainLayout, self).__init__()
+        self.app = None
+        Clock.schedule_once(self.fill_selector)
+
+    def fill_selector(self, dt):
         self.app = App.get_running_app()
         for id_, name in self.app.data.params.items():
             block = ParamSelector(id_, name)
@@ -16,6 +23,7 @@ class MainLayout(BoxLayout):
             self.app.vm.blocks.append(block)
 
 class ParamSelector(BoxLayout):
+    date = ObjectProperty()
     active_ = ObjectProperty()
     value_ = ObjectProperty()
 
@@ -34,5 +42,8 @@ class ViewModel(Widget):
         self.blocks = list()
 
     def on_last_values(self, *args):
+        logging.debug(f'{self.last_values=}')
         for block in self.blocks:
-            block.value_.text = self.last_values.get(block.id_)
+            block.value_.text = str(self.last_values.get(block.id_, (None, None))[0])
+            block.date.text = str(self.last_values.get(block.id_, (None, None))[1])
+            logging.debug(f'value {self.last_values[block.id_]} is set')

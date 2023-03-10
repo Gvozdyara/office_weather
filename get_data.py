@@ -28,7 +28,6 @@ class DataStorage:
         self.s = requests.Session()
         self.fresh_data = dict()
         self.app = App.get_running_app()
-        Clock.schedule_once(lambda dt: self.auto_refresh, 1)
 
     def update_cred(self):
         validate_token()
@@ -61,12 +60,13 @@ class DataStorage:
         logging.info(f'Data for {param}')
         return data
 
-    def auto_refresh(self):
+    def auto_refresh(self, dt=0):
+        logging.debug("Auto refersh is started")
         self.get_values()
-        self.app.vm.last_values.update({key: tuple(value[-1].values())[-1] for
+        self.app.vm.last_values.update({key: (value[0].get("data"), value[0].get("datetime")) for
                                         key, value in self.fresh_data.items()})
         Clock.schedule_once(self.auto_refresh, 300)
-        logging.info("Data is updated, new update is scheduled")
+        logging.info(f"Data is updated, new update is scheduled")
 
 
 
@@ -138,9 +138,12 @@ class SQLHandle(DBHandle):
 
 def validate_token():
     cred = get_credent()
-    if datetime.now() < datetime.fromisoformat(
+    logging.debug(f'credeantials are {cred}')
+    if datetime.now() > datetime.fromisoformat(
             cred.get("expires_in", "2023-03-09T20:04:29.392099")):
-        update_credent.json()
+        logging.info("Token must be refreshed")
+        update_credent(requests.Session()).json()
+    logging.debug("Token is valid")
 
 def get_values(token: str, param: str, s: requests.Session) -> requests.Response:
     head = {'Content-Type': 'application/x-www-form-urlencoded','charset': 'utf-8'}
@@ -168,12 +171,18 @@ def update_credent(s: requests.Session) -> requests.Response:
         raise AssertionError(f'Invalid json {res.json}')
 
     with open("token.json", "w", encoding="utf8") as f:
+
         json.dump({
-            "idToken": res.json().get("id_token"),
+            "idToken":       res.json().get("id_token"),
             "refresh_token": res.json().get("refresh_token"),
-            "expires_in": datetime.isoformat(datetime.now())
-            + timedelta(seconds=int(res.json().get("expires_in")))
-            - 15},
+            "expires_in":    datetime.now()
+                            + timedelta(seconds=int(res.json().get("expires_in")) - 15),
+            "params": {
+                "exwedjrg": "humidity",
+                "orgmjnzw": "temp",
+                "rjwyzjzg": "co2"
+                }
+            },
             f, indent=2)
     logging.debug("Credentials are updated")
     return res
@@ -206,7 +215,13 @@ def main():
         json.dump({"idToken": res.json().get("id_token"),
                    "refresh_token": res.json().get("refresh_token"),
                    "expires_in": datetime.isoformat(datetime.now()
-                   + timedelta(seconds=int(res.json().get("expires_in")) - 15))},
+                   + timedelta(seconds=int(res.json().get("expires_in")) - 15)),
+                   "params": {
+                        "exwedjrg": "humidity",
+                        "orgmjnzw": "temp",
+                        "rjwyzjzg": "co2"
+                    }
+                    },
                    f, indent=2)
 
 

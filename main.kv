@@ -4,20 +4,25 @@
 
 <ParamSelector>:
     active_: active_
-    value_: value_
-    CheckBox:
-        id: active_
-        group: "main"
+    value_: 
+    date: date
+    orientation: "vertical"
     Label:
-        text: root.name
-        size_hint: None, None
-        size: self.texture_size
-        text_size: self.size
-    Label:
-        id: value_
-        size_hint: None, None
-        size: self.texture_size
-        text_size: self.size
+        id: date
+    BoxLayout:
+        CheckBox:
+            id: active_
+            group: "main"
+            size_hint_x: None
+            width: dp(25)
+        Label:
+            text: root.name
+            size_hint_x: None
+            width: dp(100)
+        Label:
+            id: value_
+            ssize_hint_x: None
+            width: dp(30)
 
 
 
@@ -26,9 +31,11 @@
     selector_lay: selector_lay
     orientation: "vertical"
     BoxLayout:
+        size_hint_y: None
+        height: dp(100)
         Label:
             size_hint_x: None
-            width: dp(150)
+            width: dp(250)
             text: "COM 777"
             font_size: dp(50)
         BoxLayout:
@@ -38,21 +45,23 @@
             orientation: "vertical"
             BoxLayout:
                 id: selector_lay
+                size_hint_y: None
+                height: dp(100)
             BoxLayout:
 
 
         BoxLayout:
             orientation: "vertical"
             size_hint_x: None
-            width: dp(50)
+            width: dp(100)
             Button:
                 text: "Sokol M"
                 size_hint: None, None
-                size: dp(50), dp(50)
+                size: dp(100), dp(100)
             Button:
                 text: "Sokol UZ"
                 size_hint: None, None
-                size: dp(50), dp(50)
+                size: dp(100), dp(100)
             BoxLayout:
 
 
