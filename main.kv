@@ -4,7 +4,7 @@
 
 <ParamSelector>:
     active_: active_
-    value_: 
+    value_: value_
     date: date
     orientation: "vertical"
     Label:
@@ -30,6 +30,7 @@
     interactive_lay: interactive_lay
     selector_lay: selector_lay
     orientation: "vertical"
+    chart: chart
     BoxLayout:
         size_hint_y: None
         height: dp(100)
@@ -48,6 +49,7 @@
                 size_hint_y: None
                 height: dp(100)
             BoxLayout:
+                id: chart
 
 
         BoxLayout:

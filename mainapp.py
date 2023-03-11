@@ -6,6 +6,7 @@ from get_data import DataStorage
 from widgets import ViewModel
 
 
+
 class MainApp(App):
 
 	def __init__(self):

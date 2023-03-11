@@ -7,12 +7,22 @@ from abc import ABC, abstractmethod
 
 from kivy.app import App
 from kivy.clock import Clock
-
+from matplotlib import pyplot as plt
+import matplotlib as mpl
 import requests
 
-refresh_token = "APJWN8dOrJmWU1Wzw7Ws0l0RNbX8cRCJXnK-0av7jqIA8J_0m9dTgjFr7zONJH9JNwEY1K_vInRoCB2IoI7sgL2wxNl7gb0fNW8YxUzXXmLN610RI1SzWOnnJ8eV7-VYE77eAsXkjq3V5wa8Bk8Rpl6TkH5h06LSUKFqZw4UN3GlkXnGbOpCRL95BnsJWT6Dmo-JxxcsTmRpUdaHDouLFyFHBh6EhbmY51abbsFqwTEVKR8szlRESyg"
-key = "AIzaSyCq2oNYF_aU_OhVKS6OF0uWKMlaNq8Voos"
-token_path = "token.json"
+import const
+
+COLOR = 'white'
+mpl.rcParams['text.color'] = COLOR
+mpl.rcParams['axes.labelcolor'] = COLOR
+mpl.rcParams['xtick.color'] = COLOR
+mpl.rcParams['ytick.color'] = COLOR
+
+
+refresh_token = const.refresh_token
+key = const.key
+token_path = const.token_path
 
 
 class DataStorage:
@@ -40,12 +50,33 @@ class DataStorage:
     def get_values(self):
         self.update_cred()
         for i in self.params:
-            res = get_values(self.id_token, i, self.s)
+            try:
+                res = get_values(self.id_token, i, self.s)
+            except requests.ConnectionError:
+                logging.error("Connection error")
+                self.fresh_data.update({i: self.fresh_data.get(i, [{}])})
+                continue
             if res.status_code != 200:
                 logging.error(f'Invalid response {res}, {res.text}')
+                self.fresh_data.update({i: self.fresh_data.get(i, [{}])})
                 continue
             self.fresh_data.update({i: res.json()})
         logging.debug(f'data is updated {self.fresh_data}')
+        self.plot()
+
+    def plot(self):
+        fig, axs = plt.subplots(1, 3, sharex=True)
+        fig.set_facecolor('black')
+        for c, id_ in enumerate(self.params):
+            data = self.fresh_data.get(id_)
+            axs[c].plot([datetime.fromisoformat(dic.get("datetime")) for dic in data],
+                        [dic.get("data") for dic in data])
+            logging.debug(f"ax is updated")
+            axs[c].xaxis.set_tick_params(rotation=45)
+            axs[c].grid(True, mfc="white")
+            axs[c].set_facecolor("black")
+        plt.subplots_adjust(left=0.05, bottom=0.2, right=0.95, top=0.95)
+
 
     def dump_data(self):
         handle = SQLHandle()
@@ -163,7 +194,10 @@ def auth(s: requests.Session, refresh_token: str,
     return s.post(url, params=params, data=data, headers=head)
 
 def update_credent(s: requests.Session) -> requests.Response:
-    res = auth(s, refresh_token)
+    try:
+        res = auth(s, refresh_token)
+    except requests.ConnectionError:
+        logging.error("Connection error")
     if res.status_code != 200:
         raise AssertionError(f'Invalid response {res}, {res.text}')
 
@@ -175,8 +209,8 @@ def update_credent(s: requests.Session) -> requests.Response:
         json.dump({
             "idToken":       res.json().get("id_token"),
             "refresh_token": res.json().get("refresh_token"),
-            "expires_in":    datetime.now()
-                            + timedelta(seconds=int(res.json().get("expires_in")) - 15),
+            "expires_in":    datetime.isoformat(datetime.now()
+                            + timedelta(seconds=int(res.json().get("expires_in")) - 15)),
             "params": {
                 "exwedjrg": "humidity",
                 "orgmjnzw": "temp",
