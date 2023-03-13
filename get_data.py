@@ -9,6 +9,7 @@ from kivy.app import App
 from kivy.clock import Clock
 from matplotlib import pyplot as plt
 import matplotlib as mpl
+from matplotlib.ticker import FormatStrFormatter
 import requests
 
 import const
@@ -31,27 +32,28 @@ class DataStorage:
         logging.debug("Data storage is initializing")
         cred = get_credent()
         self.id_token: str = cred.get("idToken", "")
-        self.params: dict = cred.get("params", {})
+        self.params: dict = const.params
         self.tok_exp: datetime = datetime.fromisoformat(
             cred.get("expires_in", "2023-03-09T20:04:29.392099"))
         self.db_path = str()
         self.s = requests.Session()
         self.fresh_data = dict()
         self.app = App.get_running_app()
+        self.request_lines = {"lines": 20}
 
     def update_cred(self):
         validate_token()
         cred = get_credent()
         self.id_token: str = cred.get("idToken", "")
-        self.params: dict = cred.get("params", [])
         self.tok_exp: datetime = datetime.fromisoformat(
             cred.get("expires_in", "2023-03-09T20:04:29.392099"))
 
-    def get_values(self):
+    def get_values(self, isbusy=dict()):
         self.update_cred()
         for i in self.params:
             try:
-                res = get_values(self.id_token, i, self.s)
+                res = get_values(self.id_token, i, self.s,
+                                 lines=self.request_lines.get("lines"))
             except requests.ConnectionError:
                 logging.error("Connection error")
                 self.fresh_data.update({i: self.fresh_data.get(i, [{}])})
@@ -62,7 +64,12 @@ class DataStorage:
                 continue
             self.fresh_data.update({i: res.json()})
         logging.debug(f'data is updated {self.fresh_data}')
+        if self.request_lines.get("lines") > 200:
+            self.request_lines["lines"] = 20
         self.plot()
+        self.app.vm.last_values.update({key: (value[0].get("data"), value[0].get("datetime")) for
+                                        key, value in self.fresh_data.items()})
+        Clock.schedule_once(lambda dt: isbusy.update({"isrequest": False}), 5)
 
     def plot(self):
         fig, axs = plt.subplots(1, 3, sharex=True)
@@ -75,6 +82,8 @@ class DataStorage:
             axs[c].xaxis.set_tick_params(rotation=45)
             axs[c].grid(True, mfc="white")
             axs[c].set_facecolor("black")
+            if id_ == "orgmjnzw":
+                axs[c].yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
         plt.subplots_adjust(left=0.05, bottom=0.2, right=0.95, top=0.95)
 
 
@@ -94,10 +103,12 @@ class DataStorage:
     def auto_refresh(self, dt=0):
         logging.debug("Auto refersh is started")
         self.get_values()
-        self.app.vm.last_values.update({key: (value[0].get("data"), value[0].get("datetime")) for
-                                        key, value in self.fresh_data.items()})
+        
         Clock.schedule_once(self.auto_refresh, 300)
         logging.info(f"Data is updated, new update is scheduled")
+
+    def update_request_lines(self, value: int):
+        self.request_lines.update({"lines": value})
 
 
 
@@ -176,17 +187,17 @@ def validate_token():
         update_credent(requests.Session()).json()
     logging.debug("Token is valid")
 
-def get_values(token: str, param: str, s: requests.Session) -> requests.Response:
-    head = {'Content-Type': 'application/x-www-form-urlencoded','charset': 'utf-8'}
-    params = {"idToken": token, "value": param, "lines":20}
-    url =  "https://monitor3.uedasoft.com/getValue.php"
+def get_values(token: str, param: str, s: requests.Session, lines=20) -> requests.Response:
+    head = {'Content-Type': 'application/x-www-form-urlencoded', 'charset': 'utf-8'}
+    params = {"idToken": token, "value": param, "lines": lines}
+    url = "https://monitor3.uedasoft.com/getValue.php"
     return s.get(url, headers=head, params=params)
 
 
 def auth(s: requests.Session, refresh_token: str,
          url="https://securetoken.googleapis.com/v1/token") -> requests.Response:
 
-    head = {'Content-Type': 'application/x-www-form-urlencoded','charset': 'utf-8'}
+    head = {'Content-Type': 'application/x-www-form-urlencoded', 'charset': 'utf-8'}
     data = {"grant_type": "refresh_token",
             "refresh_token": refresh_token}
     params = {"key": key}
@@ -210,12 +221,7 @@ def update_credent(s: requests.Session) -> requests.Response:
             "idToken":       res.json().get("id_token"),
             "refresh_token": res.json().get("refresh_token"),
             "expires_in":    datetime.isoformat(datetime.now()
-                            + timedelta(seconds=int(res.json().get("expires_in")) - 15)),
-            "params": {
-                "exwedjrg": "humidity",
-                "orgmjnzw": "temp",
-                "rjwyzjzg": "co2"
-                }
+                            + timedelta(seconds=int(res.json().get("expires_in")) - 15))
             },
             f, indent=2)
     logging.debug("Credentials are updated")
@@ -249,12 +255,7 @@ def main():
         json.dump({"idToken": res.json().get("id_token"),
                    "refresh_token": res.json().get("refresh_token"),
                    "expires_in": datetime.isoformat(datetime.now()
-                   + timedelta(seconds=int(res.json().get("expires_in")) - 15)),
-                   "params": {
-                        "exwedjrg": "humidity",
-                        "orgmjnzw": "temp",
-                        "rjwyzjzg": "co2"
-                    }
+                   + timedelta(seconds=int(res.json().get("expires_in")) - 15))
                     },
                    f, indent=2)
 

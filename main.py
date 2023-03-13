@@ -2,6 +2,9 @@ import logging
 
 from kivy.logger import Logger
 from mainapp import MainApp
+from widgets import MainLayout, ParamSelector
+import os
+
 
 
 def main():
@@ -21,4 +24,7 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except Exception as e:
+        logging.exception(f'{e} on main flow')
