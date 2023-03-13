@@ -82,7 +82,12 @@ class ViewModel(Widget):
             logging.debug(f'value {self.last_values.get(block.id_)} is set')
         App.get_running_app().root.chart.clear_widgets()
         App.get_running_app().root.chart.add_widget(Chart())
-        self.play_sound()
+        try:
+            self.play_sound()
+
+        except PermissionError as e:
+            logging.info(f"Permission error, skip sound, {e}")
+
 
     def compare(self):
         for id_, data in self.last_values.items():
@@ -106,10 +111,11 @@ class ViewModel(Widget):
             return
 
         for id_, value in warnings.items():
-
-            tts = gTTS(f'{const.params.get(id_)} is {value}', lang="en", slow=False)
-            tts.save(f"{id_}.mp3")
-            value.append(f"{id_}.mp3")
+            file = f"{id_}{value}.mp3"
+            if not os.path.isfile(file):
+                tts = gTTS(f'{const.params.get(id_)} is {value}', lang="en", slow=False)
+                tts.save(f"{id_}{value}.mp3")
+            value.append(f"{id_}{value}.mp3")
         logging.debug(self.warnings)
         for c, (id_, value) in enumerate(warnings.items()):
             file = value[1]
@@ -117,10 +123,15 @@ class ViewModel(Widget):
                 logging.debug(f'{file} warning is ommited')
                 continue
             # SoundLoader.load(file).play()
-            mixer.init()
-            mixer.music.load(file)
-            mixer.music.play()
+            try:
+                mixer.init()
+                mixer.music.load(file)
+                mixer.music.play()
+            except Exception as e:
+                logging.exception(f'Couldn\'t play warning {e}')
+                os.system(file)
             time.sleep(4)
+            mixer.music.unload()
 
     def change_color(self, warnings: dict):
         for block in self.blocks:
