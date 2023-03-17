@@ -63,6 +63,8 @@ class DataStorage:
                 self.fresh_data.update({i: self.fresh_data.get(i, [{}])})
                 continue
             self.fresh_data.update({i: res.json()})
+        for data in self.fresh_data.values():
+            self.localize_date(data)
         logging.debug(f'data is updated {self.fresh_data}')
         if self.request_lines.get("lines") > 200:
             self.request_lines["lines"] = 20
@@ -70,6 +72,10 @@ class DataStorage:
         self.app.vm.last_values.update({key: (value[0].get("data"), value[0].get("datetime")) for
                                         key, value in self.fresh_data.items()})
         Clock.schedule_once(lambda dt: isbusy.update({"isrequest": False}), 5)
+
+    def localize_date(self, data: list[dict]):
+         for dic in data:
+            dic["datetime"] = (datetime.fromisoformat(dic["datetime"]) + timedelta(hours=3)).isoformat()
 
     def plot(self):
         fig, axs = plt.subplots(1, 3, sharex=True)

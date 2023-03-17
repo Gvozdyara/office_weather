@@ -16,7 +16,7 @@ class MainApp(App):
 		self.vm = None
 		super(MainApp, self).__init__()
 		Clock.schedule_once(self.init_atributes)
-		self.title = "Office weather v1.1"
+		self.title = "Office weather v1.2"
 
 	def init_atributes(self, dt):
 		self.data = DataStorage()

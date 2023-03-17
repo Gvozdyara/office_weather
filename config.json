@@ -1,18 +1,18 @@
 {
   "warning_ranges": {
     "exwedjrg": {
-        "too-low": [0, 19],
-        "low": [19, 35],
-        "normal": [35, 45],
+        "too-low": [0, 10],
+        "low": [10, 15],
+        "normal": [15, 45],
         "high": [45, 65],
         "too-high": [65, 100]
     },
     "orgmjnzw": {
         "too-low": [0, 19],
-        "low": [19, 21],
-        "normal": [21, 24],
-        "high": [24, 26],
-        "too-high": [26, 100]
+        "low": [19, 22],
+        "normal": [22, 26.5],
+        "high": [26.5, 29],
+        "too-high": [29, 100]
     },
     "rjwyzjzg": {
         "too-low": [0, 100],
